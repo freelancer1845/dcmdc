@@ -22,6 +22,9 @@
       ],
       "@model/*": [
         "./src/app/model/*",
+      ],
+      "@components/*": [
+        "./src/app/components/*",
       ]
     }
   }

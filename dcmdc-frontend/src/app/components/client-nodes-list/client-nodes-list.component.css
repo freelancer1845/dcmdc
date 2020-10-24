@@ -1,0 +1,11 @@
+mat-table {
+    width: 100%;
+}
+
+.node-row {
+    cursor: pointer;
+}
+
+.node-row:hover {
+    background-color: rgb(226, 226, 226);
+}

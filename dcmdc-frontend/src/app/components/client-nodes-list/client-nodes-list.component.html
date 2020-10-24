@@ -1,0 +1,15 @@
+<mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+    <!-- Position Column -->
+    <ng-container matColumnDef="uuid">
+        <mat-header-cell *matHeaderCellDef> UUID </mat-header-cell>
+        <mat-cell *matCellDef="let client"> {{client.uuid}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+        <mat-cell *matCellDef="let client"> {{client.name}} </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;" class="node-row" (click)="details(row)"></mat-row>
+</mat-table>
