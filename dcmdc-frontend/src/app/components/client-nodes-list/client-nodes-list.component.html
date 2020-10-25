@@ -1,8 +1,8 @@
 <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
     <!-- Position Column -->
-    <ng-container matColumnDef="uuid">
-        <mat-header-cell *matHeaderCellDef> UUID </mat-header-cell>
-        <mat-cell *matCellDef="let client"> {{client.uuid}} </mat-cell>
+    <ng-container matColumnDef="api_id">
+        <mat-header-cell *matHeaderCellDef> API ID </mat-header-cell>
+        <mat-cell *matCellDef="let client"> {{client.api_id}} </mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="name">

@@ -1,0 +1,10 @@
+.config-json-input {
+    min-height: 700px;
+}
+
+.divider {
+    height: 2px;
+    background-color: rgb(194, 194, 194);
+    margin-top: 2px;
+    margin-bottom: 10px;
+}

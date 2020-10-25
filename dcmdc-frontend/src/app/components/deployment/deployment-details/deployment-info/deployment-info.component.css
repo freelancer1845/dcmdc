@@ -1,0 +1,21 @@
+.table {
+    display:flex;
+    flex-direction: column;
+    max-width: 500px;
+}
+
+
+.row {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    border-bottom: 1px solid black;
+}
+
+.row div {
+    flex: 1;
+}
+
+.row div:first-child {
+    font-weight: bold;
+}

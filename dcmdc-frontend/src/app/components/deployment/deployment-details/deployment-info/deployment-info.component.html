@@ -1,0 +1,30 @@
+<div class="table">
+    <div class="row">
+        <div>
+            Name:
+        </div>
+        <div>
+            {{deployment.name}}
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            Container Name:
+        </div>
+        <div>
+            {{deployment.containerName}}
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            Target Nodes:
+        </div>
+        <div>
+            <ul>
+                <li *ngFor="let client of deployment.targetNodes">
+                    {{client.name}}
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,33 @@
+<form fxLayout="row" fxLayoutGap="5px" [formGroup]="group">
+    <div fxLayout="column" fxFlex="calc(20% - 5px)">
+
+        <mat-form-field>
+            <input matInput placeholder="Name" formControlName="name">
+        </mat-form-field>
+        <mat-form-field>
+            <input matInput placeholder="Container Name" formControlName="containerName">
+        </mat-form-field>
+        <mat-list>
+            <div>
+                <span>Target Nodes</span>
+                <button mat-icon-button color="primary">
+                    <mat-icon>add</mat-icon>
+                </button>
+            </div>
+            <mat-list-item *ngFor="let targetNode of group.value.targetNodes let i = index">
+                {{targetNode.name}}
+                <button mat-icon-button color="warn">
+                    <mat-icon>remove</mat-icon>
+                </button>
+            </mat-list-item>
+        </mat-list>
+        <div class="divider"></div>
+        <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="10px">
+
+            <button mat-raised-button color="accent">Update/Deploy</button>
+            <button mat-raised-button color="warn">Delete</button>
+        </div>
+    </div>
+    <textarea class="config-json-input" fxFlex="calc(80% - 5px)" formControlName="configuration"></textarea>
+
+</form>

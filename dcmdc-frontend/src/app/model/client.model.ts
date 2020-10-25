@@ -1,5 +1,6 @@
 export interface ClientNode {
-    uuid: string;
+    api_id: string;
+    api_secret: string;
     name: string;
     description: string;
 }
