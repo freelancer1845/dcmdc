@@ -15,7 +15,12 @@ export class AppComponent {
     {
       label: "Dashboard",
       route: "pages/dashboard",
-    }, {
+    },
+    {
+      label: "Deployments",
+      route: "pages/deployments",
+    },
+    {
       label: "Clients",
       route: "pages/clients",
     }

@@ -10,13 +10,13 @@
         <mat-list>
             <div>
                 <span>Target Nodes</span>
-                <button mat-icon-button color="primary">
+                <button mat-icon-button color="primary" (click)="addNode()">
                     <mat-icon>add</mat-icon>
                 </button>
             </div>
             <mat-list-item *ngFor="let targetNode of group.value.targetNodes let i = index">
                 {{targetNode.name}}
-                <button mat-icon-button color="warn">
+                <button mat-icon-button color="warn" (click)="removeNode(targetNode)">
                     <mat-icon>remove</mat-icon>
                 </button>
             </mat-list-item>

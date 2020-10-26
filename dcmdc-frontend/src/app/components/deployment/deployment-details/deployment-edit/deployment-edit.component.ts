@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute } from '@angular/router';
+import { SelectClientNodeComponent } from '@components/dialgos/select-client-node/select-client-node.component';
 import { ClientNode } from '@model/client.model';
 import { Deployment } from '@model/deployment.model';
 import { DeploymentsService } from '@services/deployments.service';
 import { EMPTY } from 'rxjs';
-import { flatMap } from 'rxjs/operators';
+import { filter, flatMap } from 'rxjs/operators';
 
 const CONFIGURATION_VALIDATOR: ValidatorFn = (control: AbstractControl) => {
 
@@ -36,7 +38,7 @@ export class DeploymentEditComponent implements OnInit {
 
   deployment: Deployment;
 
-  constructor(private service: DeploymentsService, private activatedRoute: ActivatedRoute, private fb: FormBuilder) { }
+  constructor(private service: DeploymentsService, private activatedRoute: ActivatedRoute, private fb: FormBuilder, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.activatedRoute.params.pipe(flatMap(params => {
@@ -58,4 +60,19 @@ export class DeploymentEditComponent implements OnInit {
   private addTargetNode(node: ClientNode) {
   }
 
+
+  public addNode() {
+    this.dialog.open(SelectClientNodeComponent).afterClosed().pipe(filter(v => v != undefined)).subscribe(value => {
+      if (this.group.value['targetNodes'].find((node: ClientNode) => node.api_id == value.api_id) != null) {
+        console.log("Node already a target node");
+        return;
+      } else {
+        this.group.value['targetNodes'].push(value);
+      }
+    });
+  }
+
+  public removeNode(nodeToRemove: ClientNode) {
+    this.group.value['targetNodes'] = this.group.value['targetNodes'].filter((node: ClientNode) => node.api_id != nodeToRemove.api_id);
+  }
 }

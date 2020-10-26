@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>Select Client Node</h1>
+<div mat-dialog-content>
+    <form class="example-form">
+        <mat-form-field class="example-full-width" *ngIf="clientNodes">
+            <input type="text" placeholder="Pick one" aria-label="Number" matInput [formControl]="control" [matAutocomplete]="auto">
+            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                <mat-option *ngFor="let option of filteredNodes | async" [value]="option">
+                    {{option.name}}
+                </mat-option>
+            </mat-autocomplete>
+        </mat-form-field>
+    </form>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onCancelClick()">Cancel</button>
+    <button mat-button [mat-dialog-close]="control.value" cdkFocusInitial>Select</button>
+</div>
