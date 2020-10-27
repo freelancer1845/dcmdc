@@ -1,56 +1,55 @@
 package de.riedeldev.dcmdc.server.clients;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-import org.springframework.messaging.rsocket.RSocketRequester;
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import de.riedeldev.dcmdc.core.model.ClientStatus;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.ReplayProcessor;
+import de.riedeldev.dcmdc.server.clients.model.ClientNode;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Service
+@Slf4j
 public class ClientService {
 
-    private Map<String, ClientHandle> handles = new HashMap<>();
+    private ClientNodeRepository clientNodeRepository;
 
-    public synchronized void handleNewRSocketClient(String uuid, RSocketRequester requester) {
-        if (this.handles.containsKey(uuid)) {
-            this.updateHandle(uuid, requester);
-        } else {
-            this.createHandle(uuid, requester);
-        }
+    @PostConstruct
+    protected void postConstruct() {
+
+        var client = new ClientNode();
+
+        client.setApiId("example_api_id_string");
+        client.setApiSecret("very-secret-api-secret".getBytes());
+
+        client.setName("Example Client");
+
+        this.clientNodeRepository.save(client);
+
     }
 
-    public Flux<ClientStatus> clientStatus(String uuid) {
-        return Flux.defer(() -> {
-            if (this.handles.containsKey(uuid) == false) {
-                throw new IllegalArgumentException("No client with uuid: " + uuid + " available.");
+    public Mono<List<ClientNode>> getClients() {
+        return Mono.fromCallable(this.clientNodeRepository::findAll);
+    }
+
+    public Mono<Void> createClient(String name, String apiId, byte[] apiSecret) {
+        return Mono.fromRunnable(() -> {
+            if (this.clientNodeRepository.findByApiId(apiId).isPresent()) {
+                throw new IllegalArgumentException("Client with this API id already exists");
             }
-            return this.handles.get(uuid).status;
+            var client = new ClientNode();
+            client.setApiId(apiId);
+            client.setApiSecret(apiSecret);
+            client.setName(name);
+            this.clientNodeRepository.save(client);
         });
     }
 
-    private static final class ClientHandle {
-        ReplayProcessor<RSocketRequester> rsocket = ReplayProcessor.cacheLast();
-        FluxSink<RSocketRequester> rsocketSink = rsocket.sink();
-
-        Flux<ClientStatus> status;
-    }
-
-    private void updateHandle(String uuid, RSocketRequester requester) {
-        this.handles.get(uuid).rsocketSink.next(requester);
-    }
-
-    private void createHandle(String uuid, RSocketRequester requester) {
-        var handle = new ClientHandle();
-        handle.rsocketSink.next(requester);
-        this.handles.put(uuid, handle);
-
-        handle.status = handle.rsocket.switchMap(req -> {
-            return req.route("/api/v1/client/status").retrieveFlux(ClientStatus.class);
-        });
+    @Autowired
+    public void setClientNodeRepository(ClientNodeRepository clientNodeRepository) {
+        this.clientNodeRepository = clientNodeRepository;
     }
 }

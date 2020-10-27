@@ -7,6 +7,30 @@
         <mat-form-field>
             <input matInput placeholder="Container Name" formControlName="containerName">
         </mat-form-field>
+        <mat-form-field>
+            <input matInput placeholder="Image" [formControl]="imageControl">
+        </mat-form-field>
+        <div fxLayout="column">
+            <h3>Port Bindings</h3>
+            <div *ngFor="let binding of portBindings" class="port-binding" fxLayout="row" fxLayoutAlign="start center" [formGroup]="binding">
+                <div fxFlex="25%">
+                    {{binding.value['targetPort']}}/{{binding.value['targetProtocol']}}
+                </div>
+                <mat-form-field fxFlex="35%">
+                    <input matInput placeholder="Host Ip" formControlName="hostIp">
+                </mat-form-field>
+                <mat-form-field fxFlex="25%">
+                    <input matInput placeholder="Host Port" formControlName="hostPort">
+                </mat-form-field>
+                <button mat-icon-button fxFlex="15%" (click)="deletePortBinding(binding.value)">
+                    <mat-icon>remove</mat-icon>
+                </button>
+
+            </div>
+            <button mat-icon-button color="primary" (click)="addPortBinding()">
+                <mat-icon>add</mat-icon>
+            </button>
+        </div>
         <mat-list>
             <div>
                 <span>Target Nodes</span>
@@ -24,10 +48,11 @@
         <div class="divider"></div>
         <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="10px">
 
-            <button mat-raised-button color="accent">Update/Deploy</button>
-            <button mat-raised-button color="warn">Delete</button>
+            <button mat-raised-button color="accent" (click)="updateDeploy()" [disabled]="!isValid()">Update/Deploy</button>
+            <!-- <button mat-raised-button color="accent" (click)="undo()">Undo To Saved</button> -->
+            <button mat-raised-button color="warn" (click)="delete()">Delete</button>
         </div>
     </div>
-    <textarea class="config-json-input" fxFlex="calc(80% - 5px)" formControlName="configuration"></textarea>
+    <textarea class="config-json-input" fxFlex="calc(80% - 5px)" formControlName="configuration" (change)="onConfigurationChange()"></textarea>
 
 </form>

@@ -1,8 +1,7 @@
 export interface ClientNode {
-    api_id: string;
-    api_secret: string;
+    apiId: string;
+    apiSecret: string;
     name: string;
-    description: string;
 }
 
 export interface ClientStatus {

@@ -1,0 +1,20 @@
+<h1 mat-dialog-title>New Deployment</h1>
+<div mat-dialog-content>
+
+    <p>
+        Create a new Deployment. Configure it later
+    </p>
+    <div fxLayout="row" fxLayoutGap="5px">
+
+        <mat-form-field>
+            <input matInput placeholder="Name" cdkFocusInitial [formControl]="nameControl">
+        </mat-form-field>
+        <mat-form-field>
+            <input matInput placeholder="Container Name" cdkFocusInitial [formControl]="containerNameControl">
+        </mat-form-field>
+    </div>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-button (click)="onCreate()" [disabled]="nameControl.invalid || containerNameControl.invalid">Create</button>
+</div>

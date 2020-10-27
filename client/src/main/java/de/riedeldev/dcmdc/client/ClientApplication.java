@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationListener;
 
 import de.riedeldev.dcmdc.client.dockeraccess.services.ContainerFactoryService;
 import de.riedeldev.dcmdc.client.dockeraccess.services.ListContainerServices;
-import de.riedeldev.dcmdc.client.registration.RegistrationService;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication
@@ -20,9 +19,6 @@ public class ClientApplication implements ApplicationListener<ApplicationReadyEv
 	public static String clientUuid;
 
 	@Autowired
-	private RegistrationService registrationService;
-
-	@Autowired
 	private ListContainerServices listContainersService;
 
 	@Autowired
@@ -30,15 +26,11 @@ public class ClientApplication implements ApplicationListener<ApplicationReadyEv
 
 	public static void main(String[] args) {
 
-		clientUuid = RegistrationService.boostrapRegistration("http://127.0.0.1:8080/");
-
 		SpringApplication.run(ClientApplication.class, args);
 	}
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		this.registrationService.publishState();
-
 
 	}
 

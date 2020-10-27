@@ -1,0 +1,19 @@
+<h1 mat-dialog-title>Create Port Binding</h1>
+<div mat-dialog-content>
+    <form class="example-form" [formGroup]="group">
+        <mat-form-field>
+            <input matInput placeholder="Target Port" cdkFocusInitial formControlName="targetPort">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-select placeholder="Target Protocol" name="item" formControlName="targetProtocol">
+                <mat-option *ngFor="let protocol of protocols" [value]="protocol">
+                    {{protocol}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </form>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onCancelClick()">Cancel</button>
+    <button mat-button [mat-dialog-close]="group.value" [disabled]="group.invalid">Create</button>
+</div>

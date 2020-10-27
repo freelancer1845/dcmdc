@@ -22,8 +22,7 @@ export class ClientNodesListComponent implements OnInit {
   }
 
   details(clientNode: ClientNode) {
-    console.log("navigation");
-    this.router.navigate(['client-node', clientNode.api_id], { relativeTo: this.route.parent })
+    this.router.navigate(['client-node', clientNode.apiId], { relativeTo: this.route.parent })
   }
 
 }

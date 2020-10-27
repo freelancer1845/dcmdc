@@ -13,6 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { ClientNodeDetailsComponent } from './client-node-details/client-node-details.component';
 import { RouterModule } from '@angular/router';
@@ -22,6 +23,10 @@ import { DeploymentInfoComponent } from './deployment/deployment-details/deploym
 import { DeploymentEditComponent } from './deployment/deployment-details/deployment-edit/deployment-edit.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SelectClientNodeComponent } from './dialgos/select-client-node/select-client-node.component';
+import { DeploymentExecutionsListComponent } from './deployment/deployment-details/deployment-info/deployment-executions-list/deployment-executions-list.component';
+import { CreatePortBindingDialogComponent } from './deployment/deployment-details/deployment-edit/create-port-binding-dialog/create-port-binding-dialog.component';
+import { NewClientDialogComponent } from './dialgos/new-client-dialog/new-client-dialog.component';
+import { NewDeploymentDialogComponent } from './dialgos/new-deployment-dialog/new-deployment-dialog.component';
 
 const MATERIAL_IMPORTS = [
   MatTableModule,
@@ -35,10 +40,11 @@ const MATERIAL_IMPORTS = [
   MatFormFieldModule,
   MatDialogModule,
   MatAutocompleteModule,
+  MatSelectModule,
 ]
 
 @NgModule({
-  declarations: [ClientNodesListComponent, NavigationComponent, ClientNodeDetailsComponent, DeploymentsListComponent, DeploymentDetailsComponent, DeploymentInfoComponent, DeploymentEditComponent, SelectClientNodeComponent],
+  declarations: [ClientNodesListComponent, NavigationComponent, ClientNodeDetailsComponent, DeploymentsListComponent, DeploymentDetailsComponent, DeploymentInfoComponent, DeploymentEditComponent, SelectClientNodeComponent, DeploymentExecutionsListComponent, CreatePortBindingDialogComponent, NewClientDialogComponent, NewDeploymentDialogComponent],
   imports: [
     CommonModule,
     RouterModule,
@@ -60,6 +66,8 @@ const MATERIAL_IMPORTS = [
   ],
   entryComponents: [
     SelectClientNodeComponent,
+    CreatePortBindingDialogComponent,
+    NewClientDialogComponent
   ]
 })
 export class ComponentsModule { }

@@ -1,4 +1,4 @@
-<div class="table">
+<div class="table" *ngIf="deployment">
     <div class="row">
         <div>
             Name:
@@ -28,3 +28,4 @@
         </div>
     </div>
 </div>
+<app-deployment-executions-list></app-deployment-executions-list>

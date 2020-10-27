@@ -13,3 +13,13 @@ export interface Deployment {
 
 }
 
+export type DeploymentState = 'WaitingToBePickedUp' | 'Pending' | 'Successful' | 'Error';
+
+export interface DeploymentExecution {
+    id: number;
+    deployment: Deployment;
+    target: ClientNode;
+    state: DeploymentState;
+    errorDescription?: string;
+
+}

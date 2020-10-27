@@ -32,16 +32,6 @@ public class DockerInfoController {
         return this.containerFactory.createContainer(request.name, request.configuration);
     }
 
-    @MessageMapping("/api/v1/client/containers/stop")
-    public Mono<Void> stopContainer(String idOrName) {
-        return this.containerFactory.stopContainer(idOrName);
-    }
-
-    @MessageMapping("/api/v1/client/containers/remove")
-    public Mono<Void> removeContainer(String idOrName) {
-        return this.containerFactory.removeContainer(idOrName);
-    }
-
     @MessageMapping("/api/v1/client/containers/restart")
     public Mono<Void> restartContainer(String idOrName) {
         return this.containerFactory.restartContainer(idOrName);

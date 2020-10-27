@@ -13,7 +13,7 @@ public class DockerApiAccessTests {
         var access = new DockerApiAccess();
         access.dockerApi = "tcp://localhost:2375";
 
-        var client = access.dockerApiClient();
+        var client = access.dockerApiClient().block();
 
         var container = client.get().uri("/containers/json").exchange().flatMap(ans -> ans.bodyToMono(List.class))
                 .block();

@@ -13,20 +13,20 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class ListContainerServices {
-    private final WebClient dockerAccess;
+    private final Mono<WebClient> dockerAccess;
 
     @Autowired
-    public ListContainerServices(WebClient dockerAccess) {
+    public ListContainerServices(Mono<WebClient> dockerAccess) {
         this.dockerAccess = dockerAccess;
     }
 
     public Mono<List<DockerContainerFlyweight>> listRunningContainers() {
-        return dockerAccess.get().uri("/containers/json").exchange().flatMap(resp -> resp.bodyToMono(List.class))
-                .map(this::mapContainerList);
+        return dockerAccess.flatMap(client -> client.get().uri("/containers/json").exchange())
+                .flatMap(resp -> resp.bodyToMono(List.class)).map(this::mapContainerList);
     }
 
     public Mono<List<DockerContainerFlyweight>> listAllContainers() {
-        return dockerAccess.get().uri("/containers/json?all=true").exchange()
+        return dockerAccess.flatMap(client -> client.get().uri("/containers/json?all=true").exchange())
                 .flatMap(resp -> resp.bodyToMono(List.class)).map(this::mapContainerList);
     }
 

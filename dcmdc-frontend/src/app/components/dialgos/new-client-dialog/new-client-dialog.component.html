@@ -1,0 +1,16 @@
+<h1 mat-dialog-title>New Client</h1>
+<div mat-dialog-content>
+
+    <p>
+        Copy this cmd to create the client. Note that you will not be access the Secret Key again.
+        <br> Click Create first to register the client with the command center.
+    </p>
+    <mat-form-field>
+        <input matInput placeholder="Name" cdkFocusInitial [formControl]="nameControl">
+    </mat-form-field>
+    <textarea readonly class="cmd-text">{{link}}</textarea>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-button (click)="onCreate()" [disabled]="nameControl.invalid">Create</button>
+</div>
