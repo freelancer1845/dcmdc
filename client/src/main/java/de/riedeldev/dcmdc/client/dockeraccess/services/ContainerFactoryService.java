@@ -1,83 +1,111 @@
 package de.riedeldev.dcmdc.client.dockeraccess.services;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import de.riedeldev.dcmdc.core.model.requests.CreateContainerAnswer;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 @Service
 @Slf4j
 public class ContainerFactoryService {
 
-    private Mono<WebClient> dockerApi;
+    private Mono<HttpClient> dockerApi;
+
+    private ObjectMapper mapper;
 
     public ContainerFactoryService() {
     }
 
     @Autowired
-    public void setDockerApi(Mono<WebClient> dockerApi) {
+    public void setDockerApi(Mono<HttpClient> dockerApi) {
         this.dockerApi = dockerApi;
     }
 
+    @Autowired
+    public void setMapper(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
     public Mono<CreateContainerAnswer> createContainer(String containerName, Map<String, Object> containerConfig) {
-        return dockerApi
+        return this.dockerApi
                 .flatMap(client -> client.post()
                         .uri("/containers/create" + (containerName == null ? "" : "?name=" + containerName))
-                        .bodyValue(containerConfig).exchange())
-                .flatMap(res -> res.bodyToMono(CreateContainerAnswer.class)).doOnSubscribe(s -> {
-                    log.debug("Creating Container {} with config {}", containerName, containerConfig);
-                });
+                        .send(Mono.fromCallable(
+                                () -> Unpooled.wrappedBuffer(this.mapper.writeValueAsBytes(containerConfig))))
+                        .responseContent().aggregate().asInputStream())
+                .map(is -> this.readJsonInput(is, CreateContainerAnswer.class))
+                .doOnSubscribe(s -> log.debug("Creating Container {} with config {}", containerName, containerConfig));
+    }
+
+    private <T> T readJsonInput(InputStream s, Class<T> clazz) {
+        try {
+            return this.mapper.readValue(s, clazz);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Mono<Void> startContainer(String idOrName) {
-        return dockerApi
-                .flatMap(client -> client.post().uri("/containers/{id}/start", idOrName).bodyValue("").exchange())
-                .flatMap(res -> {
-                    if (res.statusCode().equals(HttpStatus.NO_CONTENT)) {
+        return this.dockerApi.flatMap(client -> client.post().uri("/containers/" + idOrName + "/start")
+                .send(Mono.just(Unpooled.EMPTY_BUFFER)).responseSingle((res, data) -> {
+                    var status = res.status();
+                    if (status.equals(HttpResponseStatus.NO_CONTENT)) {
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_MODIFIED)) {
+                    } else if (status.equals(HttpResponseStatus.NOT_MODIFIED)) {
                         log.debug("Container was already started... {}", idOrName);
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.BAD_REQUEST)
-                            || res.statusCode().equals(HttpStatus.NOT_FOUND)
-                            || res.statusCode().equals(HttpStatus.CONFLICT)
-                            || res.statusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                        return res.bodyToMono(String.class).doOnNext(ans -> {
-                            throw new IllegalArgumentException(ans);
-                        }).then();
+                    } else if (status.equals(HttpResponseStatus.BAD_REQUEST)
+                            || status.equals(HttpResponseStatus.NOT_FOUND) || status.equals(HttpResponseStatus.CONFLICT)
+                            || status.equals(HttpResponseStatus.INTERNAL_SERVER_ERROR)) {
+                        return data.asString().doOnNext(message -> {
+                            throw new IllegalStateException(message);
+                        });
+
                     } else {
-                        throw new IllegalStateException("Unexpected answer: " + res.statusCode());
+                        throw new IllegalStateException("Unexpected answer: " + status);
                     }
-                });
+                })).doOnSubscribe(s -> log.debug("Starting Container: {}", idOrName))
+                .doOnSuccess(s -> log.debug("Container: {} started", idOrName))
+                .doOnError(error -> log.debug("Failed to start container: {}", idOrName)).then();
     }
 
     public Mono<Void> stopContainer(String idOrName, boolean ignoreNotFound) {
-        return dockerApi.flatMap(client -> client.post().uri("/containers/{id}/stop", idOrName).exchange())
-                .flatMap(res -> {
-                    if (res.statusCode().equals(HttpStatus.NO_CONTENT)) {
+        return this.dockerApi.flatMap(client -> client.post().uri("/containers/" + idOrName + "/stop")
+                .send(Mono.just(Unpooled.EMPTY_BUFFER)).responseSingle((res, data) -> {
+                    var status = res.status();
+                    if (status.equals(HttpResponseStatus.NO_CONTENT)) {
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_MODIFIED)) {
+                    } else if (status.equals(HttpResponseStatus.NOT_MODIFIED)) {
                         log.debug("Container was already stopped... {}", idOrName);
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_FOUND)) {
-                        if (ignoreNotFound == true) {
+                    } else if (status.equals(HttpResponseStatus.NOT_FOUND)
+                            || status.equals(HttpResponseStatus.INTERNAL_SERVER_ERROR)) {
+                        if (status.equals(HttpResponseStatus.NOT_FOUND) && ignoreNotFound) {
                             return Mono.empty();
                         }
-                        return Mono.error(new IllegalArgumentException(
-                                String.format("Container with idOrName: '%s' not found.'", idOrName)));
-                    } else if (res.statusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                        return Mono.error(new IllegalArgumentException("Internal Server Error"));
+                        return data.asString().doOnNext(message -> {
+                            throw new IllegalStateException(message);
+                        });
+
                     } else {
-                        throw new IllegalStateException("Unexpected answer: " + res.statusCode());
+                        throw new IllegalStateException("Unexpected answer: " + status);
                     }
-                });
+                })).doOnSubscribe(s -> log.debug("Stopping Container: {}", idOrName))
+                .doOnSuccess(s -> log.debug("Container: {} stopped", idOrName))
+                .doOnError(error -> log.debug("Failed to stop container: {}", idOrName)).then();
+
     }
 
     public Mono<Void> stopContainerIgnoreNotFound(String idOrName) {
@@ -85,43 +113,47 @@ public class ContainerFactoryService {
     }
 
     public Mono<Void> restartContainer(String idOrName) {
-        return dockerApi.flatMap(client -> client.post().uri("/containers/{id}/restart", idOrName).exchange())
-                .flatMap(res -> {
-                    if (res.statusCode().equals(HttpStatus.NO_CONTENT)) {
+        return this.dockerApi.flatMap(client -> client.post().uri("/containers/" + idOrName + "/restart")
+                .send(Mono.just(Unpooled.EMPTY_BUFFER)).responseSingle((res, data) -> {
+                    var status = res.status();
+                    if (status.equals(HttpResponseStatus.NO_CONTENT)) {
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_FOUND)
-                            || res.statusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                        return res.bodyToMono(MessageAnswer.class).doOnNext(ans -> {
-                            throw new IllegalArgumentException(ans.message);
-                        }).then();
+                    } else if (status.equals(HttpResponseStatus.NOT_FOUND)
+                            || status.equals(HttpResponseStatus.INTERNAL_SERVER_ERROR)) {
+                        return data.asString().doOnNext(message -> {
+                            throw new IllegalStateException(message);
+                        });
+
                     } else {
-                        throw new IllegalStateException("Unexpected answer: " + res.statusCode());
+                        throw new IllegalStateException("Unexpected answer: " + status);
                     }
-                });
+                })).doOnSubscribe(s -> log.debug("Restarting Container: {}", idOrName))
+                .doOnSuccess(s -> log.debug("Container: {} restarted", idOrName))
+                .doOnError(error -> log.debug("Failed to rsetart container: {}", idOrName)).then();
     }
 
     public Mono<Void> removeContainer(String idOrName, boolean ignoreNotFound) {
-        return dockerApi.flatMap(client -> client.delete().uri("/containers/{id}", idOrName).exchange())
-                .flatMap(res -> {
-                    if (res.statusCode().equals(HttpStatus.NO_CONTENT)) {
+        return this.dockerApi.flatMap(client -> client.delete().uri("/containers/" + idOrName)
+                .send(Mono.just(Unpooled.EMPTY_BUFFER)).responseSingle((res, data) -> {
+                    var status = res.status();
+                    if (status.equals(HttpResponseStatus.NO_CONTENT)) {
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_FOUND)) {
-                        if (ignoreNotFound) {
+                    } else if (status.equals(HttpResponseStatus.BAD_REQUEST)
+                            || status.equals(HttpResponseStatus.NOT_FOUND) || status.equals(HttpResponseStatus.CONFLICT)
+                            || status.equals(HttpResponseStatus.INTERNAL_SERVER_ERROR)) {
+                        if (status.equals(HttpResponseStatus.NOT_FOUND) && ignoreNotFound) {
                             return Mono.empty();
                         }
-                        return res.bodyToMono(MessageAnswer.class).doOnNext(ans -> {
-                            throw new IllegalArgumentException(ans.message);
-                        }).then();
-                    } else if (res.statusCode().equals(HttpStatus.BAD_REQUEST)
-                            || res.statusCode().equals(HttpStatus.CONFLICT)
-                            || res.statusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                        return res.bodyToMono(MessageAnswer.class).doOnNext(ans -> {
-                            throw new IllegalArgumentException(ans.message);
-                        }).then();
+                        return data.asString().doOnNext(message -> {
+                            throw new IllegalStateException(message);
+                        });
+
                     } else {
-                        throw new IllegalStateException("Unexpected answer: " + res.statusCode());
+                        throw new IllegalStateException("Unexpected answer: " + status);
                     }
-                });
+                })).doOnSubscribe(s -> log.debug("Removing Container: {}", idOrName))
+                .doOnSuccess(s -> log.debug("Container: {} removed", idOrName))
+                .doOnError(error -> log.debug("Failed to remove container: {}", idOrName)).then();
     }
 
     public Mono<Void> removeContainerIgnoreNotFound(String idOrName) {
@@ -129,21 +161,23 @@ public class ContainerFactoryService {
     }
 
     public Mono<Void> pullImage(String image) {
-        return this.dockerApi
-                .flatMap(
-                        client -> client.post().uri("/images/create?fromImage={image}", image).bodyValue("").exchange())
-                .flatMap(res -> {
-                    if (res.statusCode().equals(HttpStatus.OK)) {
+        return this.dockerApi.flatMap(client -> client.post().uri("/images/create?fromImage=" + image)
+                .send(Mono.just(Unpooled.EMPTY_BUFFER)).responseSingle((res, data) -> {
+                    var status = res.status();
+                    if (status.equals(HttpResponseStatus.OK)) {
                         return Mono.empty();
-                    } else if (res.statusCode().equals(HttpStatus.NOT_FOUND)
-                            || res.statusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                        return res.bodyToMono(MessageAnswer.class).doOnNext(ans -> {
-                            throw new IllegalArgumentException(ans.message);
-                        }).then();
+                    } else if (status.equals(HttpResponseStatus.NOT_FOUND)
+                            || status.equals(HttpResponseStatus.INTERNAL_SERVER_ERROR)) {
+                        return data.asString().doOnNext(message -> {
+                            throw new IllegalStateException(message);
+                        });
+
                     } else {
-                        throw new IllegalStateException("Unexpected answer: " + res.statusCode());
+                        throw new IllegalStateException("Unexpected answer: " + status);
                     }
-                }).doOnSubscribe(s -> log.debug("Pulling Image {}", image));
+                })).doOnSubscribe(s -> log.debug("Pulling image: {}", image))
+                .doOnSuccess(s -> log.debug("Image: {} pulled", image))
+                .doOnError(error -> log.debug("Failed to pull image: {}", image)).then();
     }
 
     @Data

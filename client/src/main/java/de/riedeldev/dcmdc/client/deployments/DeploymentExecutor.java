@@ -65,7 +65,9 @@ public class DeploymentExecutor {
             log.debug("Executing Deployment: {}", deployment);
             this.requester.flatMap(req -> req.route("/api/v1/client/deployment/execution/info")
                     .data(new DeploymentUpdateInfo(deployment.executionId, PENDING, null)).send()).subscribe();
-        }).flatMap(this::executeDeployment).subscribe();
+        }).concatMap(this::executeDeployment).onErrorContinue((error, deployment) -> {
+
+        }).subscribe();
     }
 
     @AllArgsConstructor
