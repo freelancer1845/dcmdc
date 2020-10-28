@@ -1,0 +1,12 @@
+FROM arm32v7/openjdk:11
+
+EXPOSE 80
+
+RUN apt-get update && apt-get install socat -y
+
+ARG JAR_FILE=target/client-*.jar
+ADD ${JAR_FILE} client.jar
+ARG ENTRY_SCRIPT=entrypoint.sh
+ADD ${ENTRY_SCRIPT} entry.sh
+RUN chmod u+x /entry.sh
+ENTRYPOINT ["/entry.sh"]
