@@ -2,11 +2,10 @@ package de.riedeldev.dcmdc.client.dockeraccess.services;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import io.netty.channel.unix.DomainSocketAddress;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -17,13 +16,16 @@ public class DockerApiAccess {
     public String dockerApi;
 
     @Bean
-    public Mono<WebClient> dockerApiClient() {
+    public Mono<HttpClient> dockerApiClient() {
         return Mono.fromCallable(() -> {
             if (this.dockerApi.startsWith("tcp://")) {
-                return WebClient.builder().baseUrl(this.dockerApi).build();
+                return HttpClient.create().baseUrl(this.dockerApi)
+                        .headers(h -> h.set(HttpHeaderNames.CONTENT_TYPE, "application/json")).compress(true)
+                        .followRedirect(true);
             } else {
-                HttpClient client = HttpClient.create().remoteAddress(() -> new DomainSocketAddress(this.dockerApi));
-                return WebClient.builder().clientConnector(new ReactorClientHttpConnector(client)).baseUrl("http:/").build();
+                return HttpClient.create().remoteAddress(() -> new DomainSocketAddress(this.dockerApi))
+                        .headers(h -> h.set(HttpHeaderNames.CONTENT_TYPE, "application/json")).compress(true)
+                        .followRedirect(true);
             }
 
         });
